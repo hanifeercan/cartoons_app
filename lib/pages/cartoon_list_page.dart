@@ -1,4 +1,5 @@
 import 'package:cartoons_app/models/cartoon.dart';
+import 'package:cartoons_app/pages/cartoon_detail_page.dart';
 import 'package:cartoons_app/repository/fetch_cartoons.dart';
 import 'package:flutter/material.dart';
 
@@ -26,6 +27,7 @@ class _CartoonListPage extends State<CartoonListPage> {
         loading = true;
       });
       cartoons = await fetchCartoons();
+      cartoons.removeWhere((cartoon) => cartoon.title.trim().isEmpty);
       error = '';
     } catch (e) {
       error = e.toString();
@@ -62,7 +64,7 @@ class _CartoonListPage extends State<CartoonListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Users')),
+      appBar: AppBar(),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error.isEmpty
@@ -89,27 +91,72 @@ class ListCartoon extends StatelessWidget {
       itemCount: cartoons.length,
       itemBuilder: (context, index) {
         final cartoon = cartoons[index];
-        return Card(
-          elevation: 4,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: Image.network(cartoon.image, fit: BoxFit.cover)),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  cartoon.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CartoonDetailPage(cartoon: cartoon),
               ),
-            ],
+            );
+          },
+          child: Card(
+            elevation: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: buildImage(cartoon.image, 200, 200)),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    cartoon.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
+}
+
+Widget buildImage(String? url, double width, double height) {
+  if (url == null || !Uri.tryParse(url)!.hasAbsolutePath == true) {
+    return Center(
+      child: Container(
+        width: width,
+        height: height,
+        color: Colors.grey[300],
+        child: Image.asset(
+          'assets/images/ic_no_image.png',
+          fit: BoxFit.contain,
+          alignment: Alignment.center,
+        ),
+      ),
+    );
+  }
+
+  return Center(
+    child: Container(
+      width: width,
+      height: height,
+      color: Colors.grey[300],
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/images/ic_no_image.png',
+            fit: BoxFit.cover,
+          );
+        },
+      ),
+    ),
+  );
 }
